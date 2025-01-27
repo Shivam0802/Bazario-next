@@ -7,6 +7,7 @@ import {
   ChartBarIcon,
   CogIcon,
   PackageSearch,
+  MessageCircleCode,
   LogOut
 } from "lucide-react";
 
@@ -66,6 +67,15 @@ const Sidebar = () => {
               >
                 <ChartBarIcon className="w-5 h-5 mr-3" />
                 <span>Analytics</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => navigate.push("/CustomerReview")}
+                className="flex items-center w-full p-3 font-semibold text-gray-700 hover:bg-[#ffd8b3] rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+              >
+                <MessageCircleCode className="w-5 h-5 mr-3" />
+                <span>Customer Review</span>
               </button>
             </li>
             <li>

@@ -57,7 +57,7 @@ const Page = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-50">
+      <div className="flex-1 p-6 bg-[#fff5eb]">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Orders</h2>
         <div className="overflow-x-auto">
           <div className="bg-white rounded-lg shadow-lg border border-gray-100">

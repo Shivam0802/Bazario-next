@@ -56,6 +56,7 @@ const AddProductForm = () => {
       <div className="w-full md:w-[16rem] lg:w-[16rem] bg-gray-800 text-white">
         <Sidebar />
       </div>
+      <div className="bg-[#fff5eb] w-full flex-1 p-6 md:p-8 lg:p-8 py-auto">
     <div className="w-[70rem] mx-auto my-auto p-8 bg-white rounded-xl shadow-lg h-fit">
       <h1 className="text-3xl font-bold mb-8 text-center">Add a New Product</h1>
       <form onSubmit={handleSubmit}>
@@ -239,6 +240,7 @@ const AddProductForm = () => {
               </button>
             </div>
       </form>
+    </div>
     </div>
     </div>
     </>
