@@ -20,7 +20,10 @@ export const loginUser = async (
       return res.status(404).json({ message: "User not found" });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(req.body.password, UserExistCheck.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      req.body.password,
+      UserExistCheck.password
+    );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({ message: "Invalid Credentials" });
@@ -35,6 +38,7 @@ export const loginUser = async (
       role: "User",
       user: {
         name: UserExistCheck.name,
+        role: UserExistCheck.role,
         email: UserExistCheck.email,
         contact: UserExistCheck.contact,
         address: UserExistCheck.address,
@@ -61,7 +65,7 @@ export const loginUser = async (
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    console.log("User", req.body);
+    //console.log("User", req.body);
     const {
       name,
       email,
@@ -87,6 +91,7 @@ export const createUser = async (req: Request, res: Response) => {
     const user = new User({
       uid: Math.floor(100000 + Math.random() * 900000),
       name: name,
+      role: "User",
       email: email,
       address: address,
       state: state,
@@ -152,22 +157,60 @@ export const getUsers = async (req: Request, res: Response) => {
 export const updateUserById = async (req: Request, res: Response) => {
   try {
     //console.log("Received update request:", req.params.id, req.body);
-    const { name, email, contact } = req.body;
+    const {
+      name,
+      email,
+      contact,
+      address,
+      gstNumber,
+      city,
+      state,
+      pinCode,
+      role,
+      businessAddress,
+      businessCity,
+      businessName,
+      businessPinCode,
+      businessState,
+      businessType,
+      panCardandTaxID,
+      paymentMethod,
+      bankName,
+      accountNumber,
+      ifscCode,
+      upiId,
+      cinNumber,
+    } = req.body;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const user = await User.findById(id) as mongoose.Document & {
+    const user = (await User.findById(id)) as mongoose.Document & {
       _id: mongoose.Types.ObjectId;
       name: string;
+      role: string;
       email: string;
       contact: string;
       address: string;
       city: string;
       state: string;
       pinCode: string;
+      gstNumber: string;
+      panCardandTaxID: string;
+      businessName: string;
+      businessType: string;
+      paymentMethod: string;
+      cinNumber: string;
+      businessAddress: string;
+      businessCity: string;
+      businessState: string;
+      businessPinCode: string;
+      bankName: string;
+      accountNumber: string;
+      ifscCode: string;
+      upiId: string;
       isActive: boolean;
     };
 
@@ -178,6 +221,26 @@ export const updateUserById = async (req: Request, res: Response) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (contact) user.contact = contact;
+    if (address) user.address = address;
+    if (city) user.city = city;
+    if (state) user.state = state;
+    if (pinCode) user.pinCode = pinCode;
+    if (gstNumber) user.gstNumber = gstNumber;
+    if (role) user.role = role;
+    if (panCardandTaxID) user.panCardandTaxID = panCardandTaxID;
+    if (businessName) user.businessName = businessName;
+    if (businessAddress) user.businessAddress = businessAddress;
+    if (businessCity) user.businessCity = businessCity;
+    if (businessState) user.businessState = businessState;
+    if (businessPinCode) user.businessPinCode = businessPinCode;
+    if (businessType) user.businessType = businessType;
+    if (bankName) user.bankName = bankName;
+    if (ifscCode) user.ifscCode = ifscCode;
+    if (upiId) user.upiId = upiId;
+    if (cinNumber) user.cinNumber = cinNumber;
+    if (paymentMethod) user.paymentMethod = paymentMethod;
+    if (accountNumber) user.accountNumber = accountNumber;
+
     await user.save();
 
     const token = {
@@ -185,26 +248,28 @@ export const updateUserById = async (req: Request, res: Response) => {
       role: "User",
       user: {
         name: user.name,
+        role: user.role,
         email: user.email,
         contact: user.contact,
         address: user.address,
         city: user.city,
         state: user.state,
         pinCode: user.pinCode,
+        gstNumber: user.gstNumber,
         isActive: user.isActive,
-        _id: user._id
+        _id: user._id,
       },
     };
     const newToken = await generateAccessJwt(token);
 
-
-    res.status(200).json({ message: "User updated successfully", user, token: newToken });
+    res
+      .status(200)
+      .json({ message: "User updated successfully", user, token: newToken });
   } catch (err) {
     console.error("Backend Error:", err);
     res.status(500).json({ message: "Something went wrong.." });
   }
 };
-
 
 // Delete a user from the database
 
@@ -222,7 +287,6 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Something went wrong.." });
   }
 };
-
 
 // Deactivating a user from the database
 

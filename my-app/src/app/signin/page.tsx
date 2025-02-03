@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { loginUser } from "@/services/user.services";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 
 export default function Page() {
   const router = useRouter();
@@ -21,35 +22,55 @@ export default function Page() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    
     try {
       const loginData = {
         email: formData.email,
         password: formData.password,
       };
-
+  
+      // Perform login API call
       const result = await loginUser(loginData);
-
+  
       if (result.token) {
-        //const decodedToken = jwtDecode(result.token);
-        localStorage.setItem("token", result.token);
-        router.push("/");
-        toast.success("Login Succesful !!", {
-         duration: 5000,
-         position: 'top-center',
-       })
+        const decodeToken = jwtDecode(result.token);
+  
+        const role = (decodeToken as any)?.user?.role;
+        if (role !== "Admin" && role === "User") {
+          // Save token in localStorage for User
+          localStorage.setItem("token", result.token);
+          router.push("/"); // Redirect to user homepage
+          toast.success("Login successful as User!", {
+            duration: 5000,
+            position: "top-center",
+          });
+        } else if (role !== "Admin" && role === "Seller") {
+          // Save token in Cookies for Seller
+          Cookies.set("authToken", result.token, {
+            domain: "localhost", // Make sure the domain matches the website
+            path: "/",
+            secure: true, // Use secure flag if you are using HTTPS
+          });
+          router.push("http://localhost:3001/SellerDashboard"); // Redirect to Seller dashboard
+          toast.success("Login successful as Seller!", {
+            duration: 5000,
+            position: "top-center",
+          });
+        }
       } else {
         toast.error("Login failed", {
-         duration: 5000,
-         position: 'top-center',
-       });
+          duration: 5000,
+          position: "top-center",
+        });
       }
     } catch (err: any) {
-      toast.error(err, {
-         duration: 5000,
-         position: 'top-center'
+      toast.error(err.message || "An error occurred during login.", {
+        duration: 5000,
+        position: "top-center",
       });
     }
   };
+  
 
   return (
     <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 import {
   HomeIcon,
   ShoppingCartIcon,
@@ -10,14 +11,16 @@ import {
   MessageCircleCode,
   LogOut
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const Sidebar = () => {
   const navigate = useRouter();
 
   const handleLogout = () => {
     // Add your logout logic here
-    console.log("User logged out");
-    navigate.push("/login"); // Redirect to login page
+    Cookies.remove("authToken");
+    navigate.push("http://localhost:3000/signin");
+    toast.success("Logout Successfully !!")
   };
 
   return (

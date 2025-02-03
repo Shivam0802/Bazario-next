@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import Notification from "@/component/notification";
 import { Search, SearchIcon } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import Cookies from 'js-cookie'
 import {
   UserRound,
   Settings,
@@ -63,6 +64,14 @@ const Navbar = () => {
     }
   }, []);
   //console.log(decodedToken, "decodeToken")
+  
+  const handleTransfer = () => {
+    if (!token) return toast.error("User is not authenticated");
+
+    Cookies.set("authToken", token, { domain: "localhost", path: "/", secure: true });
+    //console.log("Token", Cookies.get("authTOken"))
+    navigate.push("http://localhost:3001/");
+  };
 
   const handleLogout = () => {
     navigate.push("/");
@@ -392,9 +401,9 @@ const Navbar = () => {
           </button>
           {showDropdown && (
             <div className="absolute top-[4.5rem] right-[2rem] bg-[#F5F5F5] rounded shadow-xl py-2 z-50">
-              <Link
-                href="/"
-                className="flex items-center gap-3 cursor-pointer block text-lg font-semibold text-gray-900 px-6 py-2 hover:bg-[#ffe5c9d9]"
+              <button
+                onClick={handleTransfer}
+                className="w-full flex items-center gap-3 cursor-pointer block text-lg font-semibold text-gray-900 px-6 py-2 hover:bg-[#ffe5c9d9]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -415,7 +424,7 @@ const Navbar = () => {
                   <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" />
                 </svg>
                 Become a Seller
-              </Link>
+              </button>
               <Link
                 href="/settings"
                 className="flex items-center gap-3 cursor-pointer block text-lg font-semibold text-gray-900 px-6 py-2 hover:bg-[#ffe5c9d9]"
@@ -595,9 +604,9 @@ const Navbar = () => {
           Cart
         </Link>
 
-        <Link
-          href="/profile"
-          className="flex items-center gap-2 cursor-pointer block text-lg font-semibold text-gray-900 px-4 py-2 hover:bg-[#ffe5c9d9]"
+        <button
+          onClick={handleTransfer}
+          className="w-full flex items-center gap-2 cursor-pointer block text-lg font-semibold text-gray-900 px-4 py-2 hover:bg-[#ffe5c9d9]"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -618,7 +627,7 @@ const Navbar = () => {
             <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" />
           </svg>
           Become a Seller
-        </Link>
+        </button>
 
         <Link
           href="/settings"

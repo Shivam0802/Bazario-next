@@ -148,7 +148,7 @@ export default function Profile() {
     }
 
     try {
-      console.log("Updating user with data:", updatedData);
+      //console.log("Updating user with data:", updatedData);
       const response = await updateUserById(user._id, updatedData); // Pass updatedData
       console.log("Update response:", response);
       if (response.status === 200) {
