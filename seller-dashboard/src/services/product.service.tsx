@@ -1,0 +1,53 @@
+import axios from "axios";
+
+const API_BASE_URL = "http://localhost:8000";
+
+export const addProduct = async (data: Record<string, any>) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `${API_BASE_URL}/product/addProduct`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to add Product. Please try again."
+    );
+  }
+};
+
+
+export const getProduct = async (userId: string) => {
+  try {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      throw new Error("Authentication token is missing");
+    }
+    
+    const response = await axios.get(`${API_BASE_URL}/product/`, {
+      params: { userId },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    // The key change is here - directly return the response or response.data
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to Get Product. Please try again.");
+    }
+  }
+};

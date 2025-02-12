@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useRef, JSX } from "react";
 import Navbar from "@/layout/navbar";
 import { Footer } from "@/layout/footer";
-import { getProducts, Product } from "@/services/product.services";
+import { getAllProducts } from "@/services/product.services";
+import { addToCart } from "@/services/poductCart.services";
 import ProductCard from "@/component/productCard";
 import { productCategories, brands, ads } from "@/assets/data";
 import Select from "react-select";
@@ -13,7 +14,7 @@ import 'slick-carousel/slick/slick-theme.css';
 
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState([]);
   const [showDropdown, setShowDropdown] = useState<number | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -27,7 +28,16 @@ export default function Home() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getProducts().then((data) => setProducts(data));
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        console.log(response);
+        setProducts(response);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+    fetchProducts();
   }, []);
 
   const handleDropdown = (id: number) => {
@@ -208,14 +218,14 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="my-8 mx-4 hidden md:grid lg:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+            <div className="my-8 mx-4 hidden md:grid lg:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 w-full">
+              {products.map((product, index) => (
+                <ProductCard key={index} product={product} />
               ))}
             </div>
             <div className="my-8 mx-4 md:hidden lg:hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {products.map((product, index) => (
+                <ProductCard key={index} product={product} />
               ))}
             </div>
           </section>
@@ -235,7 +245,7 @@ export default function Home() {
               {
                 ads.map((item, index) => {
                   return (
-                    <img src={item.img} alt="banner" className="w-full h-auto object-cover rounded-lg" />
+                    <img key={index} src={item.img} alt="banner" className="w-full h-auto object-cover rounded-lg" />
                   )
                 })
               }
@@ -245,7 +255,7 @@ export default function Home() {
                 {
                   ads.map((item, index) => {
                     return (
-                      <img src={item.img}
+                      <img key={index} src={item.img}
                         alt="banner"
                         className="w-full h-auto object-cover rounded-lg"
                       />

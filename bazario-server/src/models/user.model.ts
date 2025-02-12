@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-interface IUser extends mongoose.Document {
+export interface IUser extends mongoose.Document {
   name: string;
   role: string;
   email: string;
@@ -27,6 +27,8 @@ interface IUser extends mongoose.Document {
   ifscCode: string;
   upiId: string;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema = new mongoose.Schema({
@@ -56,7 +58,9 @@ const userSchema = new mongoose.Schema({
   ifscCode: { type: String },
   upiId: { type: String },
   isActive: { type: Boolean, default: true },
-});
+},
+{timestamps: true}
+);
 
 const User = mongoose.model<IUser>("User", userSchema);
 export default User;

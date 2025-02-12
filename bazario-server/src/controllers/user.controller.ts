@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
-import User from "../models/user.model";
+import User,{IUser} from "../models/user.model";
 import { NextFunction, Request, Response } from "express";
 import moment from "moment";
 import { generateAccessJwt } from "../helpers/jwt";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../helpers/email";
 
 // Login a user in the database
 
@@ -158,28 +160,7 @@ export const updateUserById = async (req: Request, res: Response) => {
   try {
     //console.log("Received update request:", req.params.id, req.body);
     const {
-      name,
-      email,
-      contact,
-      address,
-      gstNumber,
-      city,
-      state,
-      pinCode,
-      role,
-      businessAddress,
-      businessCity,
-      businessName,
-      businessPinCode,
-      businessState,
-      businessType,
-      panCardandTaxID,
-      paymentMethod,
-      bankName,
-      accountNumber,
-      ifscCode,
-      upiId,
-      cinNumber,
+      name, email, contact, address, gstNumber, city, state, pinCode, role, businessAddress, businessCity, businessName, businessPinCode, businessState, businessType, panCardandTaxID, paymentMethod, bankName, accountNumber, ifscCode, upiId, cinNumber,
     } = req.body;
     const { id } = req.params;
 
@@ -312,3 +293,74 @@ export const deleteUser = async (req: Request, res: Response) => {
 //     return res.status(500).json({ message: "Something went wrong while deactivating the account" });
 //   }
 // };
+
+
+//Forget Password for user
+
+export const forgetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    } 
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const token = await generateAccessJwt({ 
+      userId: (user._id as mongoose.Types.ObjectId).toString(), 
+      email: user.email,
+      role: user.role 
+    });
+
+    const resetLink = `http://localhost:3000/resetPassword?token=${token}`;
+    const mailOptions = {
+      to: email,
+      subject: "Password Reset",
+      text: `Click the link below to reset your password:\n\n${resetLink}`,
+    };
+
+    await sendEmail(mailOptions);
+
+    res.status(200).json({ message: "Password reset link sent successfully" });
+
+  } catch (err) {
+    console.error("Error details:", err);
+    res.status(500).json({ message: "Something went wrong.." });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and new password are required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.decode(token);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const user = await User.findById((decoded as { userId: string }).userId);
+
+    if (!user) {
+      return res.status(400).json({ message: "User Not Found" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password reset successful" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Something went wrong." });
+  }
+};

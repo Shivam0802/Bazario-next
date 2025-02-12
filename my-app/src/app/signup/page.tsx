@@ -64,7 +64,7 @@ export default function Home() {
 
       // API Call
       const result = await createUser(fillData);
-      console.log(result, "result");
+      //console.log(result, "result");
 
       if (result?.message) {
         navigate.push("/signin");

@@ -1,36 +1,62 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/layout/sidebar";
 import { PencilIcon, TrashIcon, PlusIcon } from "lucide-react";
 import Image from "next/image";
-import watch from "@/assets/watch.webp";
-import earbuds from "@/assets/earbuds.webp";
-import headphones from "@/assets/headphones.webp";
-import keyboard from "@/assets/keyboard.webp";
+import { jwtDecode } from "jwt-decode";
+import { getProduct } from "@/services/product.service";
+import Cookies from "js-cookie";
+
+// Define the Product interface
+interface Product {
+  imageUrls: string[];
+  // Add other properties based on your product structure
+  name: string;
+  price: number;
+  discountedPrice?: number;
+  stock: number;
+  availability: string;
+  category: string;
+  subCategory: string;
+  brand: string;
+}
 
 const Page = () => {
-  const products = [
-    {
-      id: 1,
-      name: "Wireless Bluetooth Earbuds",
-      price: 100,
-      stock: 10,
-      image: earbuds,
-    },
-    { id: 2, name: "Smartwatch Pro", price: 200, stock: 5, image: watch },
-    {
-      id: 3,
-      name: "Noise-Canceling Headphones",
-      price: 300,
-      stock: 20,
-      image: headphones,
-    },
-    { id: 4, name: "Gaming Keyboard", price: 150, stock: 15, image: keyboard },
-  ];
-
+  const [products, setProducts] = useState<Product[]>([]); // Use the Product type
   const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get("authToken");
+
+    if (!token) {
+      console.error("No token found");
+      return;
+    }
+
+    const decodeToken = jwtDecode(token);
+
+    const fetchProducts = async () => {
+      try {
+        const userId = (decodeToken as any)?.userId;
+
+        if (!userId) {
+          console.error("No userId found in token");
+          return;
+        }
+
+        const response = await getProduct(userId);
+        setProducts(response);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  console.log(products, "getAll");
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -53,62 +79,82 @@ const Page = () => {
           </button>
         </div>
 
-        {/* Product Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col"
-            >
-              {/* Product Image and Details Container */}
-              <div className="flex flex-row">
-                {/* Product Image */}
-                <div className="relative h-48 w-1/2">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    layout="fill"
-                    objectFit="contain"
-                    className="transform group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {/* Stock Badge */}
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-800 shadow-sm">
-                    {product.stock} in stock
-                  </div>
-                </div>
+        {/* Product Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                <th className="py-3 px-6 text-left">Image</th>
+                <th className="py-3 px-6 text-left">Product</th>
+                
+                <th className="py-3 px-6 text-left">Category</th>
+                <th className="py-3 px-6 text-left">Sub-Category</th>
+                <th className="py-3 px-6 text-left">Price</th>
+                <th className="py-3 px-6 text-left">Discounted Price</th>
+                <th className="py-3 px-6 text-left">Stock</th>
+                <th className="py-3 px-6 text-left">Availability</th>
+                <th className="py-3 px-6 text-left">Brand</th>
+                <th className="py-3 px-6 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-600 text-sm font-medium">
+              {products.map((product, index) => (
+                <tr
+                  key={index}
+                  className="border-b border-gray-200 hover:bg-gray-100"
+                >
+                  <td className="py-3 px-6">
+                    <div className="relative h-16 w-16 mr-4">
+                      <Image
+                        src={product.imageUrls[0]}
+                        alt={"Product Image"}
+                        layout="fill"
+                        objectFit="contain"
+                        className="rounded"
+                      />
+                    </div>
+                  </td>
+                  <td className="py-3 px-6 flex items-center">
+                    <span className="font-semibold">{product.name}</span>
+                  </td>
 
-                {/* Product Details */}
-                <div className="p-4 w-1/2 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-md font-semibold text-gray-900 mb-4">
-                      ${product.price} 
-                    </p>
-                  </div>
+                  
+                  <td className="py-3 px-6">{product.category}</td>
+                  <td className="py-3 px-6">{product.subCategory}</td>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end space-x-4">
+                  <td className="py-3 px-6">₹ {product.price}</td>
+                  <td className="py-3 px-6">
+                    {product.discountedPrice ? `₹ ${product.discountedPrice}` : 'N/A'}
+                  </td>
+                  <td className="py-3 px-6">
+                    <div className=" backdrop-blur-sm  text-sm font-medium text-gray-800 shadow-sm">
+                      {product.stock}
+                    </div>
+                  </td>
+                  <td className="py-3 px-6">{product.availability}</td>
+                  <td className="py-3 px-6">{product.brand}</td>
+                  <td className="py-3 px-6 flex space-x-4 items-center mt-3">
                     <button
-                      onClick={() => router.push(`/product/edit/${product.id}`)}
+                      onClick={() => router.push(`/product/edit/${index}`)}
                       className="flex items-center text-[#69904d] px-3 py-1 border-2 border-[#69904d] rounded-2xl"
                     >
                       <PencilIcon className="w-4 h-4 mr-2" />
                       <span>Edit</span>
                     </button>
                     <button
-                      onClick={() => console.log(`Delete product ${product.id}`)}
+                      onClick={() =>
+                        console.log(`Delete product ${index}`)
+                      }
                       className="flex items-center text-[#AE445A] px-3 py-1 border-2 border-[#AE445A] rounded-2xl"
                     >
                       <TrashIcon className="w-4 h-4 mr-2" />
                       <span>Delete</span>
                     </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

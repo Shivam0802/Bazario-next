@@ -1,14 +1,26 @@
 import express from "express";
 import Dotenv from "dotenv";
 import Dbconnection from "./src/db/dbconfig";
-import userRoutes from "./src/routes/user.routes";
 import cors from "cors";
+import path from "path";
+
+import userRoutes from "./src/routes/user.routes";
+import productRoutes from "./src/routes/product.routes"
+import newsletterRoutes from "./src/routes/newsletter.routes"
+import contactUsRoutes from "./src/routes/contactUs.routes"
+import productCartRoutes from "./src/routes/productCart.routes"
 
 const app = express();
 
-app.use(express.json());
 app.use(cors());
 Dotenv.config();
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+app.use(express.static(path.join(process.cwd(), "public")));
 
 Dbconnection();
 
@@ -17,6 +29,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/user", userRoutes);
+app.use("/product", productRoutes)
+app.use("/newsletter", newsletterRoutes);
+app.use("/contactUs", contactUsRoutes);
+app.use("/productCart", productCartRoutes)
 
 app.listen(8000, () => {
   console.log("Server is running on port 8000");

@@ -1,31 +1,96 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import React, { useState, useEffect, use } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/layout/footer";
 import Navbar from "@/layout/navbar";
 import Select from "react-select";
-import { getProducts, Product } from "@/services/product.services";
+import { getProductById, getAllProducts } from "@/services/product.services";
+import { addToCart } from "@/services/poductCart.services";
 
 import { reviews } from "@/assets/data";
 import ProductCard from "@/component/productCard";
+import { jwtDecode } from "jwt-decode";
+import toast from "react-hot-toast";
+
+
+interface Product {
+    id: string;
+    name: string;
+    category: string;
+    imageUrls: string[];
+    discountedPrice: number;
+    price: number;
+    businessName: string;
+    description: string;
+    rating: number;
+    reviewCount: number;
+}
 
 export default function ProductInfo() {
     const { id } = useParams();
+    const navigate = useRouter();
+
     const [product, setProduct] = useState<Product | null>(null);
-    const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+    const [similarProducts, setSimilarProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getProducts().then((data) => {
-            console.log(data);
-            const ProductDetails = data.find((product: { id: string }) => product.id == id);
-            console.log(ProductDetails);
-            setProduct(ProductDetails);
-            setSimilarProducts(data);
-            setLoading(false);
-        });
+        // Ensure id is a string
+        const productId = Array.isArray(id) ? id[0] : id;
+        if (!productId) return;
+
+        const fetchProduct = async () => {
+            try {
+                const response = await getProductById(productId);
+                setProduct(response);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching product:", error);
+                setLoading(false);
+            }
+        };
+        fetchProduct();
     }, [id]);
+
+    console.log(product);
+
+    useEffect(() => {
+        const fetchSimilarProducts = async () => {
+            try {
+                const response = await getAllProducts(product?.category);
+                setSimilarProducts(response);
+            } catch (error) {
+                console.error("Error fetching similar products:", error);
+            }
+        };
+        fetchSimilarProducts();
+    }, []);
+
+    const handleAddToCart = async (e: any) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem("token");
+            
+            if (!token) {
+                navigate.push("/signin"); 
+            }
+            
+            const decodedtoken = jwtDecode((localStorage.getItem("token") as string));
+
+            const userId = (decodedtoken as any)?.userId;
+
+            const cartProduct = {
+                userId: userId,
+                productId: id,
+                quantity: 1
+            }
+            const response = await addToCart(cartProduct); 
+            toast.success("Product added to cart successfully!");
+        } catch (error) {
+            toast.error("Failed to add product to cart");
+        }
+    };
 
     return (
         <>
@@ -36,7 +101,7 @@ export default function ProductInfo() {
                         {loading || !product ? (
                             <div className="w-[40rem] h-[30rem] bg-gray-200 animate-pulse"></div>
                         ) : (
-                            <img src={product.image} alt={product.title} className="w-[35rem] h-[25rem] sm:w-[45rem] sm:h-[40rem] object-contain shadow-slate-500 shadow-lg rounded-md p-10" />
+                            <img src={product.imageUrls[0]} alt={product.name} className="w-[35rem] h-[25rem] sm:w-[45rem] sm:h-[40rem] object-contain shadow-slate-500 shadow-lg rounded-md p-10" />
                         )}
 
                         <div className="flex flex-row gap-4">
@@ -44,7 +109,9 @@ export default function ProductInfo() {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-hand-coins"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17" /><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9" /><path d="m2 16 6 6" /><circle cx="16" cy="9" r="2.9" /><circle cx="6" cy="5" r="3" /></svg>
                                 Buy now
                             </button>
-                            <button className={`flex items-center gap-4 justify-center hover:bg-[#E16A54] text-[1rem] uppercase text-gray-50 font-semibold bg-[#DF9755] py-2 w-full ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <button 
+                            onClick={handleAddToCart}
+                            className={`flex items-center gap-4 justify-center hover:bg-[#E16A54] text-[1rem] uppercase text-gray-50 font-semibold bg-[#DF9755] py-2 w-full ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-baggage-claim"><path d="M22 18H6a2 2 0 0 1-2-2V7a2 2 0 0 0-2-2" /><path d="M17 14V4a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v10" /><rect width="13" height="8" x="8" y="6" rx="1" /><circle cx="18" cy="20" r="2" /><circle cx="9" cy="20" r="2" /></svg>
                                 Add to cart
                             </button>
@@ -52,21 +119,22 @@ export default function ProductInfo() {
                     </div>
                     <div className="flex flex-col w-full h-auto sm:max-h-[47rem] overflow-y-auto bg-gray-100 custom-scrollbar">
                         <div className="py-6 bg-white">
-                            <h1 className="text-lg font-semibold">Klosia</h1>
+                            <h1 className="text-lg font-semibold">{product?.businessName}</h1>
                             <p className="text-gray-700 font-medium">
-                                {product?.title}
+                                {product?.name}
                             </p>
                             <p className="text-[#dc7f1d] font-bold mt-3">Special price</p>
                             <div className="flex items-center text-2xl font-semibold">
-                                <span className="mr-1">₹</span>{product?.price} <span className="text-gray-500 text-sm line-through ml-2">₹4,999</span> <span className="text-[#dc7f1d]  text-sm ml-2">85% off</span>
+                                <span className="mr-1">₹</span>{product?.discountedPrice} <span className="text-gray-500 text-sm line-through ml-2">
+                                    ₹{product?.price}</span> <span className="text-[#dc7f1d]  text-sm ml-2">85% off</span>
                             </div>
                             <div className="flex items-center mt-4">
                                 {product && (
-                                    <div className="bg-[#FFDAB3] text-gray-900 px-3 py-1 rounded text-sm font-semibold">{product.rating.rate}
+                                    <div className="bg-[#FFDAB3] text-gray-900 px-3 py-1 rounded text-sm font-semibold">20
                                     <span className="text-gray-700 ml-1">★</span>
                                     </div>
                                 )}
-                                <span className="text-gray-600 ml-2 text-sm">{product?.rating.count} reviews</span>
+                                <span className="text-gray-600 ml-2 text-sm">20 reviews</span>
                                 <span className="text-blue-600 ml-2 text-sm font-bold">Assured</span>
                             </div>
 
@@ -158,7 +226,7 @@ export default function ProductInfo() {
                             <div className="mt-4 flex items-start gap-16 text-gray-400">
                                 Seller
                                 <div className="flex flex-col items-start gap-1">
-                                    <p className="text-[#dc7f1d] font-semibold">KLOSIA <span className="bg-[#FFDAB3] text-gray-900 px-2 py-1 rounded-full text-sm font-semibold ml-2">3.8 <span>★</span></span></p>
+                                    <p className="text-[#dc7f1d] font-semibold">{product?.businessName}<span className="bg-[#FFDAB3] text-gray-900 px-2 py-1 rounded-full text-sm font-semibold ml-2">3.8 <span>★</span></span></p>
                                     <p className="text-gray-600 text-sm mt-1">10 Days Return Policy</p>
                                     <button className="text-blue-600 text-sm font-bold">See other sellers</button>
                                 </div>
@@ -169,8 +237,8 @@ export default function ProductInfo() {
                                 <div className="flex flex-col items-start gap-2">
                                     <h2 className="text-xl font-semibold">Ratings & Reviews</h2>
                                     <div className="flex items-center">
-                                        <div className="bg-[#FFDAB3] text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">{product?.rating.rate} <span>★</span></div>
-                                        <span className="text-gray-600 ml-2 text-sm font-medium">{product?.rating.count} reviews</span>
+                                        <div className="bg-[#FFDAB3] text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">20 <span>★</span></div>
+                                        <span className="text-gray-600 ml-2 text-sm font-medium">20 reviews</span>
                                     </div>
                                 </div>
                                 <button className="bg-[#ffe5c9d9] text-gray-900 px-4 py-1 rounded text-md font-semibold">Rate Product</button>

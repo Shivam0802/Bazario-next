@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createUser, getUsersByID, loginUser, updateUserById, deleteUser } from '../controllers/user.controller';
+import { createUser, getUsersByID, loginUser, updateUserById, deleteUser, forgetPassword, resetPassword } from '../controllers/user.controller';
 import { authorizeJwt } from '../middleware/auth';
 
 const router = Router();
@@ -27,5 +27,13 @@ router.patch('/updateUser/:id',authorizeJwt, (req: Request, res: Response) => {
 router.delete('/deleteUser/:id', authorizeJwt, (req:Request, res: Response) => {
   deleteUser(req, res);
 })
+
+router.post('/forgetPassword', (req: Request, res: Response) => {
+  forgetPassword(req, res);
+});
+
+router.post('/resetPassword', (req: Request, res: Response) => {
+  resetPassword(req, res);
+});
 
 export default router;

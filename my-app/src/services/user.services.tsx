@@ -43,16 +43,19 @@ export const getUserById = async (id: any) => {
   }
 };
 
-
 export const updateUserById = async (id: string, updatedData: any) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.patch(`${API_BASE_URL}/user/updateUser/${id}`, updatedData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.patch(
+      `${API_BASE_URL}/user/updateUser/${id}`,
+      updatedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (response.data.token) {
       localStorage.setItem("token", response.data.token); // Store the new token
@@ -61,7 +64,9 @@ export const updateUserById = async (id: string, updatedData: any) => {
     return response;
   } catch (error: any) {
     console.error("API Error:", error.response);
-    throw new Error(error.response?.data?.message || "Failed to update data !!!!");
+    throw new Error(
+      error.response?.data?.message || "Failed to update data !!!!"
+    );
   }
 };
 
@@ -70,15 +75,50 @@ export const deleteUserById = async (id: string) => {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No token found. Please log in again.");
 
-    const response = await axios.delete(`${API_BASE_URL}/user/deleteUser/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.delete(
+      `${API_BASE_URL}/user/deleteUser/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     return response;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || "Failed to delete Account");
+    throw new Error(
+      error.response?.data?.message || "Failed to delete Account"
+    );
+  }
+};
+
+export const forgetPassword = async (email: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/user/forgetPassword`, {
+      email,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to send reset link. Please try again."
+    );
+  }
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/user/resetPassword`, {
+      token,
+      newPassword,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to reset password. Please try again."
+    );
   }
 };

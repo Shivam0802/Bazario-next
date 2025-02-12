@@ -11,6 +11,8 @@ const dbconnection = async () => {
     }
     const conn = await mongoose.connect(mongoUri);
     console.log(`MongoDB connected: Bazario DB`);
+
+    return mongoose.connection;
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Error: ${error.message}`);

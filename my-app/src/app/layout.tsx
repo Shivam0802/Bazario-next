@@ -33,10 +33,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${montserrat.variable} antialiased`}>
-        <SessionProviderWrapper>
           <Toaster position="top-center" />
           {children}
-        </SessionProviderWrapper>
       </body>
     </html>
   );

@@ -151,7 +151,7 @@ export default function Page() {
 
               <div className="text-right mb-6">
                 <Link
-                  href="/forgot-password"
+                  href="/forgetPassword"
                   className="text-blue-800 hover:underline text-sm font-semibold"
                 >
                   Forgot Password?
