@@ -1,4 +1,5 @@
 import axios from "axios";
+import cookies from "js-cookie"
 
 const API_BASE_URL = "http://localhost:8000";
 
@@ -26,12 +27,7 @@ export const addProduct = async (data: Record<string, any>) => {
 
 export const getProduct = async (userId: string) => {
   try {
-    const token = localStorage.getItem("token");
-    
-    if (!token) {
-      throw new Error("Authentication token is missing");
-    }
-    
+    const token = cookies.get("authToken");
     const response = await axios.get(`${API_BASE_URL}/product/`, {
       params: { userId },
       headers: {
@@ -51,3 +47,44 @@ export const getProduct = async (userId: string) => {
     }
   }
 };
+
+
+export const getProductById = async (productId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/product/getProductById/${productId}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to Get Product. Please try again.");
+    }
+  }     
+};
+
+
+export const updateProduct = async (productId: string, data: Record<string, any>) => {
+  try {
+    const token = cookies.get("authToken");
+    const response = await axios.patch(
+      `${API_BASE_URL}/product/updateProduct/${productId}`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to Update Product. Please try again.");
+    }
+  }
+}

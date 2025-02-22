@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Select from "react-select";
 import { useRouter } from "next/navigation";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 import { createUser } from "@/services/user.services";
 import { states } from "@/assets/data";
+import { auth, provider } from "@/lib/firebase.config";
+import { onAuthStateChanged, signInWithPopup, User } from "firebase/auth";
 
 const genderOptions = [
   { value: "male", label: "Male" },
@@ -69,14 +71,53 @@ export default function Home() {
       if (result?.message) {
         navigate.push("/signin");
         toast.success(result.message, {
-         duration: 5000,
-         position: 'top-center',
-       });
+          duration: 5000,
+          position: "top-center",
+        });
       }
     } catch (error: any) {
       toast.error(error.message || "Something went wrong.");
     }
   };
+
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userData = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          contact: user.phoneNumber,
+          photoURL: user.photoURL
+        };
+        setUser(user);
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        createUser(userData);
+
+      } else {
+        setUser(null);
+        localStorage.removeItem("user");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignInWithGoogle = async () => {
+    try {
+      
+      await signInWithPopup(auth, provider);
+      navigate.push("/");
+      toast.success("Signed in successfully");
+    } catch (error) {
+      console.log("Google Sign-In Error:", error);
+      toast.error("Failed to sign in");
+    }
+  };
+
+
 
   return (
     <>
@@ -461,7 +502,8 @@ export default function Home() {
             </div>
             <div className="mt-3 space-y-3">
               <button
-                className="relative inline-flex w-full items-center justify-center rounded-md border border-gray-400 bg-white px-3.5 py-2.5 font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-black focus:outline-none"
+                onClick={() => handleSignInWithGoogle()}
+                className="relative inline-flex w-full items-center justify-center rounded-md border border-gray-400 bg-white px-3.5 py-2.5 font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 focus:outline-none active:scale-100" // Add active:scale-100
                 type="button"
               >
                 <span className="mr-2 inline-block">

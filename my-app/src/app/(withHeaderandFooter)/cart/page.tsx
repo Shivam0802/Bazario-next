@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/layout/navbar";
 import { Footer } from "@/layout/footer";
 import { getCartItems, deleteCartItem } from "@/services/poductCart.services";
@@ -23,10 +24,13 @@ interface PriductCartItem {
 }
 
 export default function Cart() {
+
+  const router = useRouter();
   const [productCart, setProductCart] = React.useState<PriductCartItem[]>([]);
 
   const decodedToken = jwtDecode(localStorage.getItem("token") as string);
   const userId = (decodedToken as any)?.userId;
+  console.log(userId, "userId");
 
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -45,11 +49,7 @@ export default function Cart() {
 
   const handleDeleteCartItem = async (cartItemId: string) => {
     try {
-      console.log(cartItemId, "Cart Item ID to Delete");
-
-      await deleteCartItem(cartItemId); // Ensure this matches what your API expects
-
-      // Filter out deleted cart item
+      await deleteCartItem(cartItemId); 
       const updatedCartItems = productCart.filter(
         (item) => item._id !== cartItemId
       );
@@ -80,11 +80,15 @@ export default function Cart() {
     window.history.back();
   }
 
+  const handleCheckout = () => {
+    router.push(`/cart/checkOut?cart=${encodeURIComponent(JSON.stringify(productCart))}`);
+  };
+
   return (
     <>
       <Navbar />
       <div className="bg-gray-100 m-8">
-        <section className="bg-white py-8 md:py-16 rounded-[1.5rem] shadow-slate-300 shadow-2xl">
+        <section className="bg-white py-8 md:pb-16 rounded-[1.5rem] shadow-slate-300 shadow-2xl">
           <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
             <button 
             type="button" 
@@ -367,12 +371,12 @@ export default function Cart() {
                     </dl>
                   </div>
 
-                  <a
-                    href="#"
-                    className="flex w-full items-center justify-center rounded-lg bg-[#F4D793] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  <button
+                    onClick={handleCheckout}
+                    className="flex w-full items-center justify-center rounded-lg bg-[#F4D793] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-primary-800 focus:outline-none"
                   >
                     Proceed to Checkout
-                  </a>
+                  </button>
 
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-normal text-gray-500 dark:text-gray-400">

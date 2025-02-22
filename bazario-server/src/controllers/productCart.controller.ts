@@ -12,6 +12,11 @@ export const addProductToCart = async (
      try {
           const { productId, quantity } = req.body;
 
+          if (!mongoose.Types.ObjectId.isValid(productId)) {    
+               return res.status(400).json({ message: "Invalid product ID" });
+          }
+
+
           const productCard = new ProductCart({
                userId: req.body.userId,
                productId,

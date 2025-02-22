@@ -29,7 +29,8 @@ export default function ProductCard({ product }: { product: any }) {
                 productId: id,
                 quantity: 1
             }
-            const response = await addToCart(cartProduct); 
+            const response = await addToCart(cartProduct);
+             
             toast.success("Product added to cart successfully!");
         } catch (error) {
             toast.error("Failed to add product to cart");
@@ -40,7 +41,7 @@ export default function ProductCard({ product }: { product: any }) {
         <>
            {id && (<Link href={`/products/${id}`} className="bg-[#fff0dfd9] flex flex-col gap-1 rounded-2xl cursor-pointer hover:shadow-2xl transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-105 duration-300">
                 <div className="relative h-[15rem] md:h-[12rem] lg:h-[15rem] bg-gray-50 rounded-t-2xl group">
-                    <img className="h-full w-full object-contain rounded-t-2xl" src={product.imageUrls} alt="product" />
+                    <img className="h-full w-full object-contain rounded-t-2xl" src={product.imageUrls[0]} alt="product" />
                 </div>
                 <div className="flex flex-col justify-between h-[11rem] md:h-[8rem] lg:h-[10rem] px-3 pt-1 pb-2">
                     <div className='flex flex-col gap-1'>

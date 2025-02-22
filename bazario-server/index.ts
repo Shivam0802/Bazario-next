@@ -9,6 +9,7 @@ import productRoutes from "./src/routes/product.routes"
 import newsletterRoutes from "./src/routes/newsletter.routes"
 import contactUsRoutes from "./src/routes/contactUs.routes"
 import productCartRoutes from "./src/routes/productCart.routes"
+import orderRoutes from "./src/routes/order.routes"
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/product", productRoutes)
 app.use("/newsletter", newsletterRoutes);
 app.use("/contactUs", contactUsRoutes);
 app.use("/productCart", productCartRoutes)
+app.use("/order", orderRoutes)
 
 app.listen(8000, () => {
   console.log("Server is running on port 8000");

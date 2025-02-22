@@ -66,12 +66,12 @@ export const getProduct = async (
 ) => {
   try {
     const userId = req.query.userId as string;
+    console.log("Searching for userId:", userId);
     
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
     
-    console.log("Searching for userId:", userId);
     
     let products = await Product.find({ userId }).lean(); 
     
@@ -182,6 +182,80 @@ export const getProductById = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+export const updateProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const {
+      name, description, price, discountedPrice, stock, availability, category,
+      brand, sku, weight, dimensions, shippingOptions, returnPolicy, colors, 
+      sizes, material, warranty, tags, userId, customFields, subCategory
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Check if files are uploaded
+    if (req.files && Array.isArray(req.files)) {
+      const filenames = (req.files as Express.Multer.File[]).map(file => file.filename);
+      product.images = Array.isArray(product.images) ? [...product.images, ...filenames] : filenames;
+    }
+
+    // Convert nullable numeric values safely
+    const parseNumber = (value: any) => {
+      const num = Number(value);
+      return isNaN(num) ? undefined : num; // Return undefined if conversion fails
+    };
+
+    product.name = name;
+    product.subCategory = subCategory;
+    product.description = description;
+    product.price = parseNumber(price) || 0;
+    product.discountedPrice = parseNumber(discountedPrice);
+    product.stock = parseNumber(stock) || 0;
+    product.availability = availability;
+    product.category = category;
+    product.brand = brand;
+    product.sku = sku;
+    product.weight = parseNumber(weight);
+
+    // Ensure dimensions are properly parsed
+    product.dimensions = {
+      length: parseNumber(dimensions?.length) || 0,
+      width: parseNumber(dimensions?.width) || 0,
+      height: parseNumber(dimensions?.height) || 0,
+    };
+
+    product.shippingOptions = shippingOptions;
+    product.returnPolicy = returnPolicy;
+    product.colors = colors;
+    product.sizes = sizes;
+    product.material = material;
+    product.warranty = warranty;
+    product.tags = tags;
+    product.customFields = customFields || [];
+
+    await product.save();
+
+    res.status(200).json({ message: "Product updated successfully!", product });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 
 

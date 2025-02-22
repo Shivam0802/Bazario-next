@@ -12,6 +12,7 @@ import Cookies from "js-cookie";
 // Define the Product interface
 interface Product {
   imageUrls: string[];
+  _id: string;
   // Add other properties based on your product structure
   name: string;
   price: number;
@@ -135,7 +136,7 @@ const Page = () => {
                   <td className="py-3 px-6">{product.brand}</td>
                   <td className="py-3 px-6 flex space-x-4 items-center mt-3">
                     <button
-                      onClick={() => router.push(`/product/edit/${index}`)}
+                      onClick={() => router.push(`/product/addProduct?id=${product._id}`)}
                       className="flex items-center text-[#69904d] px-3 py-1 border-2 border-[#69904d] rounded-2xl"
                     >
                       <PencilIcon className="w-4 h-4 mr-2" />

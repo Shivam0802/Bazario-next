@@ -12,7 +12,7 @@ export interface IProduct extends Document {
   discountedPrice?: number;
   stock: number;
   availability: "In-Stock" | "Out-Of-Stock" | "Pre-Order";
-  images: [string];
+  images: string[];
   videos?: string[];
   weight?: number;
   dimensions?: { length: number; width: number; height: number };
@@ -48,7 +48,7 @@ const ProductSchema: Schema = new Schema(
       type: String,
       enum: ["In-Stock", "Out-Of-Stock", "Pre-Order"],
     },
-    images: [String],
+    images: { type: [String] },
     videos: { type: [String] },
     weight: { type: Number },
     dimensions: {

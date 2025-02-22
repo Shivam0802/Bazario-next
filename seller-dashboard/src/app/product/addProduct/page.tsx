@@ -1,17 +1,21 @@
 "use client";
 
-import { addProduct } from "@/services/product.service";
-import { useRouter } from "next/navigation";
+import { addProduct, getProductById, updateProduct } from "@/services/product.service";
+import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/layout/sidebar";
 import Cookies from "js-cookie";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
 import Select from "react-select";
 import { stockdetails } from "@/assets/data";
 import { X } from "lucide-react";
 
+
 export default function ProductForm() {
+
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
   const navigate = useRouter();
   const [user, setUser] = useState({});
   const [formData, setFormData] = useState({
@@ -26,7 +30,7 @@ export default function ProductForm() {
     stock: "",
     availability: "in-stock",
     images: [],
-    imagePreviews: [],
+    imageUrls: [],
     videos: [],
     weight: "",
     dimensions: { length: "", width: "", height: "" },
@@ -57,26 +61,44 @@ export default function ProductForm() {
 
     setFormData((prev: any) => ({
       ...prev,
-      imagePreviews: [...prev.imagePreviews, ...imageUrls], // Store preview URLs (only for UI)
+      imageUrls: [...prev.imageUrls, ...imageUrls], // Store preview URLs (only for UI)
       images: [...prev.images, ...files], // Store File objects (for backend submission)
     }));
   };
+  
+  
+  const getProductDetails = async (productId: string) => {
+    try {
+      const response = await getProductById(productId);
+      //console.log(response, "response");
+      setFormData(response);
+    }
+    catch (error) {
+      console.error("Error fetching product details:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      getProductDetails(id);
+    }
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
       const token = Cookies.get("authToken");
-
+  
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
-
+  
       const decodeToken = jwtDecode(token);
-
+  
       // Create FormData object to handle file uploads
       const formDataToSend = new FormData();
-
+  
       formDataToSend.append("userId", (decodeToken as any)?.userId);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
@@ -89,35 +111,64 @@ export default function ProductForm() {
       formDataToSend.append("stock", formData.stock);
       formDataToSend.append("availability", formData.availability);
       formDataToSend.append("weight", formData.weight);
-      formDataToSend.append("returnPolicy", formData.returnPolicy),
+      formDataToSend.append("returnPolicy", formData.returnPolicy);
+  
+      // ✅ Append optional fields only if they exist
+      if (formData.colors?.length) {
         formData.colors.forEach((color: string) => {
           formDataToSend.append("color", color);
         });
-
-      formDataToSend.append("material", formData.material),
-        formDataToSend.append("warranty", formData.warranty),
+      }
+  
+      if (formData.material) {
+        formDataToSend.append("material", formData.material);
+      }
+  
+      if (formData.warranty) {
+        formDataToSend.append("warranty", formData.warranty);
+      }
+  
+      if (formData.sizes?.length) {
         formData.sizes.forEach((size: string) => {
-          formDataToSend.append("color", size);
+          formDataToSend.append("size", size);
         });
-
-      formData.tags.forEach((tag: string) => {
-        formDataToSend.append("tag", tag);
-      });
-
-      formDataToSend.append("dimensions[length]", formData.dimensions.length);
-      formDataToSend.append("dimensions[width]", formData.dimensions.width);
-      formDataToSend.append("dimensions[height]", formData.dimensions.height);
-
-      formData.images.forEach((file: File) => {
-        formDataToSend.append("images", file);
-      });
-
+      }
+  
+      if (formData.tags?.length) {
+        formData.tags.forEach((tag: string) => {
+          formDataToSend.append("tag", tag);
+        });
+      }
+  
+      if (formData.dimensions) {
+        if (formData.dimensions.length) {
+          formDataToSend.append("dimensions[length]", formData.dimensions.length);
+        }
+        if (formData.dimensions.width) {
+          formDataToSend.append("dimensions[width]", formData.dimensions.width);
+        }
+        if (formData.dimensions.height) {
+          formDataToSend.append("dimensions[height]", formData.dimensions.height);
+        }
+      }
+  
+      if (formData.images?.length) {
+        formData.images.forEach((file: File) => {
+          formDataToSend.append("images", file);
+        });
+      }
+  
       console.log([...formDataToSend.entries()], "formDataToSend");
-
-      // API Call
-      const result = await addProduct(formDataToSend);
+  
+      let result;
+      if (id) {
+        result = await updateProduct(id, formDataToSend);
+      } else {
+        result = await addProduct(formDataToSend);
+      }
+  
       console.log(result, "result");
-
+  
       if (result?.message) {
         navigate.push("/product");
         toast.success(result.message, {
@@ -129,10 +180,17 @@ export default function ProductForm() {
       toast.error(error.message || "Something went wrong.");
     }
   };
+  
 
-  function handleImageRemove(index: number): void {
-    throw new Error("Function not implemented.");
-  }
+  const handleRemoveImage = (index: number) => {
+    const updatedImagePreviews = [...formData.imageUrls];
+    updatedImagePreviews.splice(index, 1);
+    setFormData({ ...formData, imageUrls: updatedImagePreviews });
+
+    const updatedImages = [...formData.images];
+    updatedImages.splice(index, 1);
+    setFormData({ ...formData, images: updatedImages });
+  };
 
   return (
     <>
@@ -495,7 +553,7 @@ export default function ProductForm() {
                   <div className="relative">
                     <input
                       type="text"
-                      value={formData.sizes.join(", ")}
+                      value={formData?.sizes?.join(", ")}
                       onChange={(e) =>
                         setFormData((prev: any) => ({
                           ...prev,
@@ -551,7 +609,7 @@ export default function ProductForm() {
                   <div className="relative">
                     <input
                       type="text"
-                      value={formData.tags.join(", ")}
+                      value={formData?.tags?.join(", ")}
                       onChange={(e) =>
                         setFormData((prev: any) => ({
                           ...prev,
@@ -569,7 +627,7 @@ export default function ProductForm() {
                 </div>
 
                 <div className="flex flex-col gap-2 mt-3">
-                  {formData.colors.map(
+                  {formData?.colors?.map(
                     (color: { name: string; hex: string }, index: number) => (
                       <div key={index} className="flex items-center gap-2">
                         {/* Color Name Input (Only for UI, not sent to backend) */}
@@ -652,7 +710,7 @@ export default function ProductForm() {
                   <h4 className="text-md font-semibold text-gray-800 mb-2">
                     Custom Fields
                   </h4>
-                  {formData.additionalInfo.map(
+                  { formData.additionalInfo && formData.additionalInfo.map(
                     (info: { key: string; value: string }, index: number) => (
                       <div
                         key={index}
@@ -780,13 +838,13 @@ export default function ProductForm() {
                 </div>
 
                 {/* Image Preview */}
-                {formData.imagePreviews?.length > 0 && (
+                {formData.imageUrls &&  formData.imageUrls?.length > 0 && (
                   <div className="mt-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">
                       Image Previews
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {formData.imagePreviews.map((imageUrl, index) => (
+                      {formData.imageUrls.map((imageUrl, index) => (
                         <div key={index} className="relative group">
                           <img
                             src={imageUrl}
@@ -796,7 +854,7 @@ export default function ProductForm() {
                           <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
                             <button
                               type="button"
-                              onClick={() => handleImageRemove(index)}
+                              onClick={() => handleRemoveImage(index)}
                               className="text-white bg-red-500 p-1.5 rounded-full hover:bg-red-600 focus:outline-none transform transition hover:scale-110"
                             >
                               <svg
