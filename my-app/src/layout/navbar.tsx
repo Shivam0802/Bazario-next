@@ -100,6 +100,10 @@ const Navbar = () => {
    }
  };
 
+ const handleSearch = () => {
+  navigate.push("/search");
+ }
+
   return (
     <nav className="bg-white shadow-lg py-4 px-6 max-w-screen mx-auto">
       <div className="md:w-full lg:w-full mx-auto md:mx-0 flex justify-between items-center md:h-16 lg:h-16">
@@ -142,17 +146,19 @@ const Navbar = () => {
 
         {/* Search */}
         <div className="hidden lg:flex items-center gap-4">
-          <div className="flex items-center bg-gray-100 border border-gray-200 rounded-md px-4 focus:outline-none focus:ring-1 focus:ring-[#8D0B41] focus:ring-opacity-50">
+          <div
+            onClick={handleSearch}
+            className="flex items-center bg-gray-100 border border-gray-200 rounded-md px-4 focus:outline-none focus:ring-1 focus:ring-[#8D0B41] focus:ring-opacity-50 cursor-pointer"
+          >
             <SearchIcon size={20} />
             <input
               type="text"
               placeholder="Search for products"
-              className="w-72 h-9 px-4 py-2 bg-gray-100 focus:outline-none font-semibold text-gray-800 placeholder-gray-400"
+              className="w-72 h-9 px-4 py-2 bg-gray-100 focus:outline-none font-semibold text-gray-800 placeholder-gray-400 cursor-pointer"
+              onClick={handleSearch}
+              readOnly
             />
           </div>
-          <button className="bg-[#ffe5c9d9] text-gray-800 cursor-pointer px-4 py-1 rounded-md font-semibold text-lg hover:bg-[#FFDAB3] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            Search
-          </button>
         </div>
 
         {/* Desktop Menu */}
@@ -179,6 +185,29 @@ const Navbar = () => {
               <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
             </svg>
             Home
+          </Link>
+
+          <Link
+            href="/products"
+            className="flex items-center gap-2 text-[1.12rem] text-gray-800 hover:text-[#8D0B41] cursor-pointer font-semibold hover:bg-gray-100 rounded-md px-4 py-1"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20" 
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#8D0B41"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-shopping-bag"
+            >
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+              <path d="M3 6h18" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            Products
           </Link>
 
           <Link

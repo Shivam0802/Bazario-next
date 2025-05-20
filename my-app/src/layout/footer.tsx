@@ -89,7 +89,7 @@ export const Footer = () => {
           </Link>
 
           <Link
-            href="/blog"
+            href="/blogs"
             className="cursor-pointer bg-white relative inline-flex items-center justify-center gap-2 rounded-md text-[1rem] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-[#578E7E] hover:underline h-9 rounded-md px-3"
           >
             <svg

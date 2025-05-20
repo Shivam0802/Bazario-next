@@ -57,6 +57,7 @@ export const loginUser = async (
       message: "Login successful",
       token,
     });
+    
   } catch (err) {
     console.error("Error details:", err);
     res.status(500).json({ message: "Something went wrong.." });

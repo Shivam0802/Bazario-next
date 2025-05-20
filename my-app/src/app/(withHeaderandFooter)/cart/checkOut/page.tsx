@@ -125,9 +125,9 @@ export default function page() {
         <div className="my-8 shadow-[0_0_0_1px_rgba(0,0,0,0.1)] rounded-lg p-4">
           <div className="flex justify-between items-start">
             <h2 className="text-lg font-semibold">Delivering to Shivam</h2>
-            <button className="px-4 py-1 bg-[#F4D793] rounded-lg text-md font-medium">
+            {/* <button className="px-4 py-1 bg-[#F4D793] rounded-lg text-md font-medium">
               Change
-            </button>
+            </button> */}
           </div>
           <p className="text-sm text-[#565959] mt-2">
             {(decodedToken as any)?.user.address +

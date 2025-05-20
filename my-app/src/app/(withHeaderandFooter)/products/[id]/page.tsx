@@ -1,17 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/layout/footer";
 import Navbar from "@/layout/navbar";
 import Select from "react-select";
 import { getProductById, getAllProducts } from "@/services/product.services";
 import { addToCart } from "@/services/poductCart.services";
-
-import { reviews } from "@/assets/data";
-import ProductCard from "@/component/productCard";
 import { jwtDecode } from "jwt-decode";
+import ProductCard from "@/component/productCard";
 import toast from "react-hot-toast";
+import { addReview, getReviewsByProductId } from "@/services/review.services";
 
 interface Product {
   id: string;
@@ -26,6 +25,15 @@ interface Product {
   reviewCount: number;
 }
 
+interface Review {
+  userId: string;
+  productId: string;
+  rating: number;
+  comment: string;
+  images: string[];
+  imageUrls: string[];
+}
+
 export default function ProductInfo() {
   const { id } = useParams();
   const navigate = useRouter();
@@ -33,6 +41,23 @@ export default function ProductInfo() {
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [open, setOpen] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  const [formData, setFormData] = useState<{
+    rating: number;
+    review: string;
+    images: File[];
+    imageUrls: string[];
+  }>({
+    rating: 0,
+    review: "",
+    images: [],
+    imageUrls: [],
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Ensure id is a string
@@ -52,7 +77,7 @@ export default function ProductInfo() {
     fetchProduct();
   }, [id]);
 
-  console.log(product);
+  //console.log(product);
 
   useEffect(() => {
     const fetchSimilarProducts = async () => {
@@ -98,7 +123,9 @@ export default function ProductInfo() {
   const handlePlaceOrder = () => {
     const productItem = { ...product, quantity: 1 };
     console.log(productItem);
-    navigate.push(`/cart/checkOut?cart=${encodeURIComponent(JSON.stringify(productItem))}`);
+    navigate.push(
+      `/cart/checkOut?cart=${encodeURIComponent(JSON.stringify(productItem))}`
+    );
   };
 
   useEffect(() => {
@@ -106,6 +133,104 @@ export default function ProductInfo() {
       setSelectedImage(product?.imageUrls[0]);
     }
   }, [product]);
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate.push("/signin");
+      }
+
+      const decodedtoken = jwtDecode(localStorage.getItem("token") as string);
+
+      //console.log(decodedtoken);
+
+      const userId = (decodedtoken as any)?.userId;
+
+      setDeliveryAddress((decodedtoken as any)?.user?.address);
+    } catch (error) {
+      console.error("Error fetching similar products:", error);
+    }
+  }, []);
+
+  const handleChange = (e: any, field?: string) => {
+    if (field) {
+      setFormData({ ...formData, [field]: e.value });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return; // Ensure files exist
+
+    const files: File[] = Array.from(e.target.files); // Convert FileList to an array of File objects
+
+    const imageUrls = files.map((file: File) => URL.createObjectURL(file)); // Create preview URLs
+
+    setFormData((prev: any) => ({
+      ...prev,
+      imageUrls: [...prev.imageUrls, ...imageUrls], // Store preview URLs (only for UI)
+      images: [...prev.images, ...files], // Store File objects (for backend submission)
+    }));
+  };
+
+  const handleSubmitReview = async (e: any) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate.push("/signin");
+      }
+
+      const decodedtoken = jwtDecode(localStorage.getItem("token") as string);
+
+      const userId = (decodedtoken as any)?.userId;
+
+      const formDataToSend = new FormData();
+
+      formDataToSend.append("rating", formData.rating.toString());
+      formDataToSend.append("review", formData.review);
+      formDataToSend.append("productId", id as string);
+      formDataToSend.append("userId", userId as string);
+
+      formData.images.forEach((image) => {
+        formDataToSend.append("images", image);
+      });
+
+      console.log(formDataToSend, "FormDataToSend");
+
+      const response = await addReview(formDataToSend);
+      toast.success("Review submitted successfully!");
+      setFormData({
+        rating: 0,
+        review: "",
+        images: [],
+        imageUrls: [],
+      });
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review");
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const response = await getReviewsByProductId(id as string);
+      console.log(response.data, "hdsgf");
+      setReviews(response.data);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
+
+  console.log(reviews, "reviews");
 
   return (
     <>
@@ -117,7 +242,7 @@ export default function ProductInfo() {
               <div className="w-[40rem] h-[30rem] bg-gray-200 animate-pulse"></div>
             ) : (
               <img
-                src={selectedImage || product.imageUrls[0]} 
+                src={selectedImage || product.imageUrls[0]}
                 alt={product.name}
                 className="w-[35rem] h-[25rem] sm:w-[45rem] sm:h-[40rem] object-contain shadow-slate-500 shadow-lg rounded-md p-10"
               />
@@ -205,7 +330,15 @@ export default function ProductInfo() {
                 <span className="text-gray-500 text-sm line-through ml-2">
                   ₹{product?.price}
                 </span>{" "}
-                <span className="text-[#dc7f1d]  text-sm ml-2">85% off</span>
+                <span className="text-[#dc7f1d] text-sm ml-2">
+                  {product &&
+                    Math.round(
+                      ((product.price - product.discountedPrice) /
+                        product.price) *
+                        100
+                    )}
+                  % off
+                </span>
               </div>
               <div className="flex items-center mt-4">
                 {product && (
@@ -235,7 +368,7 @@ export default function ProductInfo() {
                 <p className="text-blue-600 text-sm mt-2">Size Chart</p>
               </div>
 
-              <div className="mt-4 flex items-center gap-32">
+              {/*<div className="mt-4 flex items-center gap-32">
                 <div>
                   <p className="font-semibold mb-2">Color</p>
                   <div className="flex space-x-2">
@@ -279,7 +412,7 @@ export default function ProductInfo() {
                     }}
                   />
                 </div>
-              </div>
+              </div>*/}
               <div className="mt-4">
                 <p className="font-semibold">Available offers</p>
                 <ul className="list-disc list-inside text-gray-700">
@@ -325,7 +458,7 @@ export default function ProductInfo() {
                   Deliver to
                 </p>
                 <div className="border border-gray-300 px-3 py-2 rounded flex items-center justify-between gap-4 w-[90%] sm:w-[60%] ">
-                  <p>Shivam, d-34, Avantika Vihar, Madipur</p>
+                  <p>{deliveryAddress}</p>
                   <div className="text-gray-600 text-xs flex items-center">
                     <span className="bg-gray-200 px-3 py-1 rounded-full">
                       HOME
@@ -392,21 +525,24 @@ export default function ProductInfo() {
               <div className="flex items-center justify-between border-b py-4 px-2">
                 <div className="flex flex-col items-start gap-2">
                   <h2 className="text-xl font-semibold">Ratings & Reviews</h2>
-                  <div className="flex items-center">
+                  {/* <div className="flex items-center">
                     <div className="bg-[#FFDAB3] text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
                       20 <span>★</span>
                     </div>
                     <span className="text-gray-600 ml-2 text-sm font-medium">
                       20 reviews
                     </span>
-                  </div>
+                  </div> */}
                 </div>
-                <button className="bg-[#ffe5c9d9] text-gray-900 px-4 py-1 rounded text-md font-semibold">
+                <button
+                  className="bg-[#ffe5c9d9] text-gray-900 px-4 py-1 rounded text-md font-semibold"
+                  onClick={() => setOpen(true)}
+                >
                   Rate Product
                 </button>
               </div>
 
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <p className="font-semibold">Images uploaded by customers:</p>
                 <div className="flex space-x-2 mt-2">
                   {reviews[0].images.map((img, index) => (
@@ -418,7 +554,7 @@ export default function ProductInfo() {
                     />
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               <div className="mt-4 space-y-6">
                 {reviews.map((review, index) => (
@@ -428,9 +564,19 @@ export default function ProductInfo() {
                         {review.rating}
                         <span className="ml-1">★</span>{" "}
                       </div>
-                      <p>{review.review}</p>
+                      <p>{review.comment}</p>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="mt-2 flex items-center gap-2 ml-12">
+                      {review.images.map((img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          alt={`Customer upload ${index + 1}`}
+                          className="w-20 h-20 sm:w-32 sm:h-32 object-cover rounded"
+                        />
+                      ))}
+                    </div>
+                    {/* <div className="flex items-center justify-between">
                       <p className="text-gray-600 text-sm mt-2">
                         {review.name}{" "}
                         <span className="ml-2">{review.daysAgo}</span>
@@ -445,14 +591,14 @@ export default function ProductInfo() {
                           <span>{review.notHelpful}</span>
                         </button>
                         <span>...</span>
-                      </div>
-                    </div>
+                      </div> 
+                    </div> */}
                   </div>
                 ))}
               </div>
 
               <div className="mt-4 text-blue-600 text-sm">
-                <a href="#">All 28 reviews</a>
+                <a href="#">All {reviews.length} reviews</a>
               </div>
 
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between">
@@ -491,6 +637,125 @@ export default function ProductInfo() {
         </div>
       </section>
       <Footer />
+
+      {open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg w-[90%] max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold">Write a Review</h3>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Rating
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => handleChange({ value: star }, "rating")}
+                    className={`text-2xl ${
+                      formData.rating >= star
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    } hover:text-yellow-500 transition-colors`}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="ml-2 text-gray-600">
+                  {formData.rating
+                    ? `${formData.rating} out of 5`
+                    : "Select rating"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Your Review
+              </label>
+              <textarea
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                rows={4}
+                name="review"
+                placeholder="Write your review here..."
+                value={formData.review}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Add Photos
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-violet-50 file:text-violet-700
+                hover:file:bg-violet-100"
+              />
+            </div>
+
+            {formData.imageUrls.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {formData.imageUrls.map((src, index) => (
+                  <img
+                    key={index}
+                    src={src}
+                    alt={`preview-${index}`}
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={(e) => {
+                  handleSubmitReview(e);
+                  setOpen(false);
+                }}
+                className="px-4 py-2 bg-[#dc7f1d] text-white rounded hover:bg-[#c97218]"
+              >
+                Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

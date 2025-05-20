@@ -3,7 +3,7 @@ import { Router, Request, Response, NextFunction } from "express";
 //import { GridFsStorage } from "multer-gridfs-storage"; // Import the correct GridFsStorage package
 //import mongoose from "mongoose";
 //import Dbconnection from "../db/dbconfig"; // Assuming this is your DB connection function
-import { addProduct, getAllProduct, getProduct, getProductById, updateProduct } from "../controllers/product.controller";
+import { addProduct, getAllProduct, getProduct, getProductById, updateProduct, deleteProduct } from "../controllers/product.controller";
 import { authorizeJwt } from "../middleware/auth";
 import { upload } from '../middleware/imageUpload'
 
@@ -29,6 +29,10 @@ router.get("/getProductById/:id", (req: Request, res: Response, next: NextFuncti
 
 router.patch("/updateProduct/:id", authorizeJwt, upload.array("images", 5), (req: Request, res: Response, next: NextFunction) => {
   updateProduct(req, res, next);
+})
+
+router.delete("/deleteProduct/:id", authorizeJwt, (req: Request, res: Response, next: NextFunction) => {
+  deleteProduct(req, res, next);
 })
 
 export default router;

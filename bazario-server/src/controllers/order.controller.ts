@@ -201,7 +201,6 @@ export const getOrderById = async (req: Request, res: Response) => {
   }
 };
 
-
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -222,6 +221,114 @@ export const cancelOrder = async (req: Request, res: Response) => {
     await order.save();
 
     res.status(200).json({ message: "Order cancelled successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+//Get order by product id
+
+export const getOrderByProductId = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const pipeline = [
+      {
+        $unwind: "$products",
+      },
+
+      // Step 2: Lookup product details from Product collection
+      {
+        $lookup: {
+          from: "products",
+          localField: "products.productId",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+
+      // Step 3: Unwind product details (since lookup returns an array)
+      {
+        $unwind: "$productDetails",
+      },
+
+      // Step 4: Match only products that belong to the seller
+      {
+        $match: {
+          "productDetails.userId": new mongoose.Types.ObjectId(id),
+        },
+      },
+
+      {
+        $addFields: {
+          "productDetails.imageUrls": {
+            $map: {
+              input: { $ifNull: ["$productDetails.images", []] },
+              as: "image",
+              in: {
+                $concat: [
+                  process.env.BASE_URL,
+                  "/uploads/",
+                  { $toString: "$$image" },
+                ],
+              },
+            },
+          },
+          "productDetails.quantity": "$products.quantity",
+        },
+      },
+
+      // Step 5: Lookup buyer details from User collection
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "buyerDetails",
+        },
+      },
+
+      // Step 6: Unwind buyer details (since lookup returns an array)
+      {
+        $unwind: "$buyerDetails",
+      },
+
+      // Step 7: Project only required fields
+      {
+        $project: {
+          _id: 1,
+          productName: "$productDetails.name",
+          productPrice: "$productDetails.price",
+          productCategory: "$productDetails.category",
+          productBrand: "$productDetails.brand",
+          imageUrl: "$productDetails.imageUrls",
+          productId: "$productDetails._id",
+          buyerName: "$buyerDetails.name",
+          buyerEmail: "$buyerDetails.email",
+          quantity: "$products.quantity",
+          totalAmount: 1,
+          paymentMethod: 1,
+          shippingAddress: 1,
+          status: {
+            $cond: {
+              if: "$cancelled",
+              then: "Cancelled",
+              else: "Active",
+            },
+          },
+          createdAt: 1,
+        },
+      },
+    ];
+
+    const result = await Order.aggregate(pipeline);
+
+    res.status(200).json({ result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Something went wrong" });

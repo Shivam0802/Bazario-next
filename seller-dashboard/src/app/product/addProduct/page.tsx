@@ -1,6 +1,10 @@
 "use client";
 
-import { addProduct, getProductById, updateProduct } from "@/services/product.service";
+import {
+  addProduct,
+  getProductById,
+  updateProduct,
+} from "@/services/product.service";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/layout/sidebar";
 import Cookies from "js-cookie";
@@ -11,14 +15,41 @@ import Select from "react-select";
 import { stockdetails } from "@/assets/data";
 import { X } from "lucide-react";
 
-
 export default function ProductForm() {
-
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const navigate = useRouter();
   const [user, setUser] = useState({});
-  const [formData, setFormData] = useState({
+  interface Color {
+    name: string;
+    hex: string;
+  }
+
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    category: string;
+    subCategory: string;
+    brand: string;
+    sku: string;
+    price: string;
+    discountedPrice: string;
+    stock: string;
+    availability: string;
+    images: File[];
+    imageUrls: string[];
+    videos: string[];
+    weight: string;
+    dimensions: { length: string; width: string; height: string };
+    shippingOptions: string[];
+    returnPolicy: string;
+    colors: Color[];
+    sizes: string[];
+    material: string;
+    warranty: string;
+    tags: string[];
+    additionalInfo: { key: string; value: string }[];
+  }>({
     name: "",
     description: "",
     category: "",
@@ -65,15 +96,13 @@ export default function ProductForm() {
       images: [...prev.images, ...files], // Store File objects (for backend submission)
     }));
   };
-  
-  
+
   const getProductDetails = async (productId: string) => {
     try {
       const response = await getProductById(productId);
       //console.log(response, "response");
       setFormData(response);
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error fetching product details:", error);
     }
   };
@@ -86,19 +115,18 @@ export default function ProductForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     try {
       const token = Cookies.get("authToken");
-  
+
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
-  
+
       const decodeToken = jwtDecode(token);
-  
-      // Create FormData object to handle file uploads
+
       const formDataToSend = new FormData();
-  
+
       formDataToSend.append("userId", (decodeToken as any)?.userId);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
@@ -112,63 +140,78 @@ export default function ProductForm() {
       formDataToSend.append("availability", formData.availability);
       formDataToSend.append("weight", formData.weight);
       formDataToSend.append("returnPolicy", formData.returnPolicy);
-  
-      // ✅ Append optional fields only if they exist
+
       if (formData.colors?.length) {
-        formData.colors.forEach((color: string) => {
-          formDataToSend.append("color", color);
+        formData.colors.forEach((color, index) => {
+          formDataToSend.append(`colors[${index}][name]`, color.name);
+          formDataToSend.append(`colors[${index}][hex]`, color.hex);
         });
       }
-  
+      
+
       if (formData.material) {
         formDataToSend.append("material", formData.material);
       }
-  
+
       if (formData.warranty) {
         formDataToSend.append("warranty", formData.warranty);
       }
-  
+
       if (formData.sizes?.length) {
         formData.sizes.forEach((size: string) => {
           formDataToSend.append("size", size);
         });
       }
-  
+
       if (formData.tags?.length) {
         formData.tags.forEach((tag: string) => {
           formDataToSend.append("tag", tag);
         });
       }
-  
+
       if (formData.dimensions) {
         if (formData.dimensions.length) {
-          formDataToSend.append("dimensions[length]", formData.dimensions.length);
+          formDataToSend.append(
+            "dimensions[length]",
+            formData.dimensions.length
+          );
         }
         if (formData.dimensions.width) {
           formDataToSend.append("dimensions[width]", formData.dimensions.width);
         }
         if (formData.dimensions.height) {
-          formDataToSend.append("dimensions[height]", formData.dimensions.height);
+          formDataToSend.append(
+            "dimensions[height]",
+            formData.dimensions.height
+          );
         }
       }
-  
+
       if (formData.images?.length) {
         formData.images.forEach((file: File) => {
           formDataToSend.append("images", file);
         });
       }
-  
+
+      if (formData.additionalInfo?.length) {
+        formData.additionalInfo.forEach(
+          (info: { key: string; value: string }) => {
+            formDataToSend.append(`additionalInfo[${info.key}]`, info.value);
+          }
+        );
+      }
+
       console.log([...formDataToSend.entries()], "formDataToSend");
-  
+
       let result;
       if (id) {
         result = await updateProduct(id, formDataToSend);
       } else {
         result = await addProduct(formDataToSend);
       }
-  
+
       console.log(result, "result");
-  
+
       if (result?.message) {
         navigate.push("/product");
         toast.success(result.message, {
@@ -180,7 +223,6 @@ export default function ProductForm() {
       toast.error(error.message || "Something went wrong.");
     }
   };
-  
 
   const handleRemoveImage = (index: number) => {
     const updatedImagePreviews = [...formData.imageUrls];
@@ -627,76 +669,83 @@ export default function ProductForm() {
                 </div>
 
                 <div className="flex flex-col gap-2 mt-3">
-                  {formData?.colors?.map(
-                    (color: { name: string; hex: string }, index: number) => (
-                      <div key={index} className="flex items-center gap-2">
-                        {/* Color Name Input (Only for UI, not sent to backend) */}
-                        <div className="relative peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none">
-                          <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={color.name}
-                          onChange={(e) => {
-                            const updatedColors = [...formData.colors] as Array<{name: string, hex: string}>;
-                            updatedColors[index].name = e.target.value;
-                            setFormData((prev: any) => ({
-                              ...prev,
-                              colors: updatedColors,
-                            }));
-                          }}
-                          placeholder="Enter color name"
-                          className="w-[90%] py-2 focus:outline-none"
-                        />
+                  {(formData.colors || []).map((color, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      {/* Color Name Input */}
+                      <div className="relative peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={color.name || ""} // Ensure value is always a string
+                            onChange={(e) => {
+                              const updatedColors = [
+                                ...(formData.colors || []),
+                              ];
+                              updatedColors[index] = {
+                                ...updatedColors[index],
+                                name: e.target.value,
+                              };
+                              setFormData((prev) => ({
+                                ...prev,
+                                colors: updatedColors,
+                              }));
+                            }}
+                            placeholder="Enter color name"
+                            className="w-[90%] py-2 focus:outline-none"
+                          />
 
-                        {/* Hex Code Input */}
-                        <input
-                          type="color"
-                          value={color.hex}
-                          onChange={(e) => {
-                            const updatedColors = [...formData.colors] as Array<{name: string, hex: string}>;
-                            updatedColors[index].hex = e.target.value;
-                            setFormData((prev: any) => ({
-                              ...prev,
-                              colors: updatedColors,
-                            }));
-                          }}
-                          className="w-[10%] cursor-pointer border-none rounded-full"
-                        />
+                          {/* Hex Code Input */}
+                          <input
+                            type="color"
+                            value={color.hex || "#000000"} // Ensure value is always a string
+                            onChange={(e) => {
+                              const updatedColors = [
+                                ...(formData.colors || []),
+                              ];
+                              updatedColors[index] = {
+                                ...updatedColors[index],
+                                hex: e.target.value,
+                              };
+                              setFormData((prev) => ({
+                                ...prev,
+                                colors: updatedColors,
+                              }));
+                            }}
+                            className="w-[10%] cursor-pointer border-none rounded-full"
+                          />
                         </div>
-                        <label
-                        className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs"
-                        >
+                        <label className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs">
                           Color
                         </label>
-
-                        </div>
-
-                        {/* Remove Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev: any) => ({
-                              ...prev,
-                              colors: prev.colors.filter(
-                                (_: any, i: number) => i !== index
-                              ),
-                            }));
-                          }}
-                          className="px-1 py-1 text-red-900 rounded-full border-[0.15rem] border-red-500"
-                        >
-                          <X size={24} strokeWidth={2} />
-                        </button>
                       </div>
-                    )
-                  )}
+
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            colors:
+                              prev.colors?.filter((_, i) => i !== index) || [],
+                          }));
+                        }}
+                        className="px-1 py-1 text-red-900 rounded-full border-[0.15rem] border-red-500"
+                      >
+                        <X size={24} strokeWidth={2} />
+                      </button>
+                    </div>
+                  ))}
 
                   {/* Add More Colors Button */}
                   <button
                     type="button"
                     onClick={() =>
-                      setFormData((prev: any) => ({
+                      setFormData((prev) => ({
                         ...prev,
-                        colors: [...prev.colors, { name: "", hex: "#000000" }],
+                        colors: [
+                          ...(prev?.colors || []),
+                          { name: "", hex: "#000000" },
+                        ],
                       }))
                     }
                     className="mt-4 px-4 py-2 bg-gradient-to-r from-[#f0a75b] to-[#e09b4f] text-white rounded-lg hover:from-[#e09b4f] hover:to-[#d08e42] transition"
@@ -710,95 +759,93 @@ export default function ProductForm() {
                   <h4 className="text-md font-semibold text-gray-800 mb-2">
                     Custom Fields
                   </h4>
-                  { formData.additionalInfo && formData.additionalInfo.map(
-                    (info: { key: string; value: string }, index: number) => (
-                      <div
-                        key={index}
-                        className="grid grid-cols-2 gap-4 items-center mb-2"
-                      >
-                        <div className="relative">
-                          <input
-                            id="key"
-                            type="text"
-                            value={info.key}
-                            onChange={(e) => {
-                              const updatedInfo = [
-                                ...formData.additionalInfo,
-                              ] as Array<{ key: string; value: string }>;
-                              updatedInfo[index].key = e.target.value;
-                              setFormData((prev: any) => ({
-                                ...prev,
-                                additionalInfo: updatedInfo,
-                              }));
-                            }}
-                            className="peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none"
-                          />
-                          <label
-                            htmlFor="key"
-                            className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs"
-                          >
-                            New Field
-                          </label>
-                        </div>
-                        <div className="relative">
-                          <input
-                            id="value"
-                            type="text"
-                            value={info.value}
-                            onChange={(e) => {
-                              const updatedInfo = [
-                                ...formData.additionalInfo,
-                              ] as Array<{ key: string; value: string }>;
-                              updatedInfo[index].value = e.target.value;
-                              setFormData((prev: any) => ({
-                                ...prev,
-                                additionalInfo: updatedInfo,
-                              }));
-                            }}
-                            className="peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none"
-                          />
-                          <label
-                            htmlFor="value"
-                            className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs"
-                          >
-                            Value
-                          </label>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            const updatedInfo = formData.additionalInfo.filter(
-                              (_, i) => i !== index
-                            );
-                            setFormData((prev: any) => ({
+                  {(formData.additionalInfo || []).map((info, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-2 gap-4 items-center mb-2"
+                    >
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={info.key || ""} // Ensure it's always a string
+                          onChange={(e) => {
+                            const updatedInfo = [
+                              ...(formData.additionalInfo || []),
+                            ];
+                            updatedInfo[index] = {
+                              ...updatedInfo[index],
+                              key: e.target.value,
+                            };
+                            setFormData((prev) => ({
                               ...prev,
                               additionalInfo: updatedInfo,
                             }));
                           }}
-                          className="col-span-2 text-red-500 text-sm underline hover:text-red-700"
-                        >
-                          Remove
-                        </button>
+                          placeholder="New Field"
+                          className="peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none"
+                        />
+                        <label className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs">
+                          New Field
+                        </label>
                       </div>
-                    )
-                  )}
-                </div>
 
-                {/* Add More Button */}
-                <button
-                  onClick={() =>
-                    setFormData((prev: any) => ({
-                      ...prev,
-                      additionalInfo: [
-                        ...prev.additionalInfo,
-                        { key: "", value: "" },
-                      ],
-                    }))
-                  }
-                  className="mt-4 px-4 py-2 bg-gradient-to-r from-[#f0a75b] to-[#e09b4f] text-white rounded-lg hover:from-[#e09b4f] hover:to-[#d08e42] transition"
-                >
-                  + Add More
-                </button>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={info.value || ""} // Ensure it's always a string
+                          onChange={(e) => {
+                            const updatedInfo = [
+                              ...(formData.additionalInfo || []),
+                            ];
+                            updatedInfo[index] = {
+                              ...updatedInfo[index],
+                              value: e.target.value,
+                            };
+                            setFormData((prev) => ({
+                              ...prev,
+                              additionalInfo: updatedInfo,
+                            }));
+                          }}
+                          placeholder="Value"
+                          className="peer w-full rounded-lg border-2 border-gray-300 bg-transparent px-4 pt-6 pb-2 text-gray-900 transition-all focus:border-[#f0a75b] focus:outline-none"
+                        />
+                        <label className="absolute left-4 top-2 text-xs font-medium text-gray-500 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs">
+                          Value
+                        </label>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            additionalInfo: prev.additionalInfo.filter(
+                              (_, i) => i !== index
+                            ),
+                          }));
+                        }}
+                        className="col-span-2 text-red-500 text-sm underline hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add More Button */}
+                  <button
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        additionalInfo: [
+                          ...(prev.additionalInfo || []),
+                          { key: "", value: "" },
+                        ],
+                      }))
+                    }
+                    className="mt-4 px-4 py-2 bg-gradient-to-r from-[#f0a75b] to-[#e09b4f] text-white rounded-lg hover:from-[#e09b4f] hover:to-[#d08e42] transition"
+                  >
+                    + Add More
+                  </button>
+                </div>
               </div>
 
               {/* Image Upload Section */}
@@ -838,7 +885,7 @@ export default function ProductForm() {
                 </div>
 
                 {/* Image Preview */}
-                {formData.imageUrls &&  formData.imageUrls?.length > 0 && (
+                {formData.imageUrls && formData.imageUrls?.length > 0 && (
                   <div className="mt-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">
                       Image Previews

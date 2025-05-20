@@ -139,7 +139,8 @@ export default function Home() {
           </h1>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 mt-6">
             {itemsCategory.map((item, index) => (
-              <div
+              <Link
+                href={`/products?category=${item.category}`}
                 key={index}
                 className="flex items-center space-x-4 p-4 bg-white shadow-xl rounded-lg hover:bg-gray-100 cursor-pointer"
               >
@@ -154,7 +155,7 @@ export default function Home() {
                     {item.description.split(", ").join(" | ")}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -436,7 +437,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="hidden md:flex lg:flex flex-col justify-center items-center mx-28 mt-8">
+      {/*<section className="hidden md:flex lg:flex flex-col justify-center items-center mx-28 mt-8">
         <h1 className="text-[2.25rem] font-extrabold uppercase text-gray-800 mt-4">
           Subscription Plans
         </h1>
@@ -449,9 +450,9 @@ export default function Home() {
             <Subscription key={index} subscription={item} />
           ))}
         </div>
-      </section>
+      </section>*/}
 
-      <section className="md:hidden lg:hidden flex flex-col mt-8 w-full">
+      {/*<section className="md:hidden lg:hidden flex flex-col mt-8 w-full">
         <h1 className="text-[1.5rem] font-extrabold uppercase text-gray-800 text-center mt-4 mx-4">
           Subscription Plans
         </h1>
@@ -464,7 +465,7 @@ export default function Home() {
             <Subscription key={index} subscription={item} />
           ))}
         </Slider>
-      </section>
+      </section>*/}
 
       <section className="flex flex-col md:flex-row justify-between bg-[#F5F5F5] m-4 md:m-6 py-6 rounded-[2rem]">
         <div className="flex flex-col w-full md:w-[50%] px-4 md:px-0 lg:px-0 md:mx-28 mt-8">

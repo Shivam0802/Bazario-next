@@ -18,7 +18,11 @@ export interface IProduct extends Document {
   dimensions?: { length: number; width: number; height: number };
   shippingOptions?: string[];
   returnPolicy?: string;
-  colors?: string[];
+  colors?: 
+    {
+      name: string;
+      hex: string;
+    }[];
   sizes?: string[];
   material?: string;
   warranty?: string;
@@ -58,7 +62,12 @@ const ProductSchema: Schema = new Schema(
     },
     shippingOptions: { type: [String] },
     returnPolicy: { type: String },
-    colors: { type: [String] },
+    colors: [
+      {
+        name: { type: String },
+        hex: { type: String },
+      },
+    ],
     sizes: { type: [String] },
     material: { type: String },
     warranty: { type: String },

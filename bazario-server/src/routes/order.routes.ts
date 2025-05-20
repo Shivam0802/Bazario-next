@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { placeOrder, getOrders, getOrderById, cancelOrder } from "../controllers/order.controller";
+import { placeOrder, getOrders, getOrderById, cancelOrder, getOrderByProductId } from "../controllers/order.controller";
 import { authorizeJwt } from "../middleware/auth";
 
 const router = Router();
@@ -18,6 +18,10 @@ router.get("/getOrderById/:id/:productId", authorizeJwt, (req: Request, res: Res
 
 router.patch("/cancelOrder/:id", authorizeJwt, (req: Request, res: Response) => {
      cancelOrder(req, res);
+});
+
+router.get("/getOrderByProductId/:id", authorizeJwt, (req: Request, res: Response) => {
+     getOrderByProductId(req, res);
 });
 
 export default router;

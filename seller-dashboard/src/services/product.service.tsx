@@ -5,7 +5,7 @@ const API_BASE_URL = "http://localhost:8000";
 
 export const addProduct = async (data: Record<string, any>) => {
   try {
-    const token = localStorage.getItem("token");
+    const token = cookies.get("authToken");
     const response = await axios.post(
       `${API_BASE_URL}/product/addProduct`,
       data,
@@ -87,4 +87,31 @@ export const updateProduct = async (productId: string, data: Record<string, any>
       throw new Error("Failed to Update Product. Please try again.");
     }
   }
+}
+
+
+export const deleteProduct = async (productId: string) => {
+  try { 
+    const token = cookies.get("authToken");
+    const response = await axios.delete(
+      `${API_BASE_URL}/product/deleteProduct/${productId}`,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+
+  }
+  catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to Delete Product. Please try again.");
+    }
+  }
+  
 }

@@ -6,7 +6,7 @@ import Sidebar from "@/layout/sidebar";
 import { PencilIcon, TrashIcon, PlusIcon } from "lucide-react";
 import Image from "next/image";
 import { jwtDecode } from "jwt-decode";
-import { getProduct } from "@/services/product.service";
+import { getProduct, deleteProduct } from "@/services/product.service";
 import Cookies from "js-cookie";
 
 // Define the Product interface
@@ -57,7 +57,17 @@ const Page = () => {
     fetchProducts();
   }, []);
 
-  console.log(products, "getAll");
+ // console.log(products, "getAll");
+
+ const handleDeleteProduct = async (productId: string) => {
+  try {
+    await deleteProduct(productId);
+    const updatedProducts = products.filter((product) => product._id !== productId);
+    setProducts(updatedProducts);
+  } catch (error) {
+    console.error("Error deleting product:", error);
+  }
+};
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -144,7 +154,7 @@ const Page = () => {
                     </button>
                     <button
                       onClick={() =>
-                        console.log(`Delete product ${index}`)
+                        handleDeleteProduct(product._id)
                       }
                       className="flex items-center text-[#AE445A] px-3 py-1 border-2 border-[#AE445A] rounded-2xl"
                     >
